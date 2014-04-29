@@ -6,15 +6,17 @@
 package findphonenumber;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.TreeSet;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 
-
 import jxl.write.Label;
-import jxl.write.Number;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
+import jxl.read.biff.BiffException;
 
 /**
  *
@@ -22,31 +24,82 @@ import jxl.write.WritableWorkbook;
  */
 public class FindPhoneNumber {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-       
+    Set<String> listNumber;
+
+    public static void main(String[] args) throws IOException {
+//        FindPhoneNumber ff = new FindPhoneNumber();
+//        ff.read();
+//        ff.write();
+        FileChooser fc = new FileChooser();
+        fc.setVisible(true);
+    }
+
+    public void read(String inputFileName) throws IOException {
+        File inputWorkbook = new File(inputFileName);
+        Workbook w;
+
+        listNumber = new TreeSet<String>();
+
+        try {
+            w = Workbook.getWorkbook(inputWorkbook);
+            // Get the first sheet
+            Sheet sheet = w.getSheet(0);
+
+            for (int j = 0; j < sheet.getColumns(); j++) {
+                for (int i = 0; i < sheet.getRows(); i++) {
+                    Cell cell = sheet.getCell(j, i);
+
+                    String str = cell.getContents();
+                    String[] parts = str.split(" ");
+                    for (int k = 0; k < parts.length; k++) {
+                        String regex = "[0-9]+";
+                        int leng = parts[k].length();
+                        
+                        if (leng >= 9 && leng <= 14) {
+                             String tmp =parts[k].replaceAll("[-+.^:,]","");
+                            if (parts[k].matches(regex)) {
+                                listNumber.add(parts[k]);
+                            } else if ((parts[k].substring(0, leng - 1)).matches(regex)) {
+                                listNumber.add((parts[k].substring(0, leng - 1)));
+                            } else if (tmp.matches(regex)) {
+                                 listNumber.add(tmp);
+                            } else if ((tmp.substring(0, tmp.length() - 1)).matches(regex)) {
+                                listNumber.add((tmp.substring(0, tmp.length() - 1)));
+                            
+                            }
+                        }
+
+                    }
+
+                }
+            }
+        } catch (BiffException e) {
+            e.printStackTrace();
+        }
+
+//        for (String temp : listNumber) {
+//            System.out.println(temp);
+//        }
+        System.out.println(listNumber.size());
+    }
+
+    public void write() {
         try {
             WritableWorkbook wworkbook;
-            wworkbook = Workbook.createWorkbook(new File("output.xls"));
+            wworkbook = Workbook.createWorkbook(new File("OutputNew.xls"));
             WritableSheet wsheet = wworkbook.createSheet("First Sheet", 0);
-            Label label = new Label(0, 2, "A label record");
-            wsheet.addCell(label);
-            Number number = new Number(3, 4, 3.1459);
-            wsheet.addCell(number);
+            int i = 0;
+            for (String temp : listNumber) {
+                Label label = new Label(0, i, temp);
+                wsheet.addCell(label);
+                i++;
+            }
             wworkbook.write();
             wworkbook.close();
-
-            Workbook workbook = Workbook.getWorkbook(new File("output.xls"));
-            Sheet sheet = workbook.getSheet(0);
-            Cell cell1 = sheet.getCell(0, 2);
-            System.out.println(cell1.getContents());
-            Cell cell2 = sheet.getCell(3, 4);
-            System.out.println(cell2.getContents());
-            workbook.close();
+            
         } catch (Exception e) {
-            System.out.println("Error");
+            e.printStackTrace();
+//            System.out.println("Error");
         }
     }
 
